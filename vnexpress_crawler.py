@@ -1,5 +1,4 @@
 import logging
-from logging import config
 from itertools import chain
 from datetime import datetime, timedelta
 
@@ -8,7 +7,6 @@ from bs4 import BeautifulSoup
 
 from schema.article import Article
 from crawl_session import CrawlSession
-from comment_parser import CommentParser
 
 logger = logging.getLogger(__name__)
 
@@ -168,17 +166,3 @@ class VnExpressCrawler():
         if next_page_elem and 'disable' not in next_page_elem.attrs["class"]:
             absolute_url = next_page_elem.attrs["href"]
             return self.base_url + absolute_url
-
-
-def config_logger(config_path):
-    config.fileConfig(config_path, disable_existing_loggers=False)
-
-
-async def main():
-    config_logger("config/logging.ini")
-    crawler = VnExpressCrawler(days_ago=2)
-    article_list = await crawler.start()
-    parser = CommentParser()
-    comment_count = await parser.start(article_list)
-
-asyncio.run(main())
