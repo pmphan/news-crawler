@@ -6,14 +6,14 @@ import asyncio
 from bs4 import BeautifulSoup
 
 from schema.article import Article
-from crawl_session import CrawlSession
+from crawlers.crawl_session import CrawlSession
 
 logger = logging.getLogger(__name__)
 
 class VnExpressCrawler():
 
-    def __init__(self, days_ago: int=7):
-        """       
+    def __init__(self, days_ago: int=7, buffer_limit=25):
+        """
         Args:
             days_ago: How many day ago should the crawl start
         """
@@ -28,6 +28,9 @@ class VnExpressCrawler():
         # }
         self.base_url = "https://vnexpress.net"
         self.article_query_url = "https://vnexpress.net/category/day"
+
+        # How many article to return each crawl. This is not a hard limit.
+        self.buffer_limit = buffer_limit
 
         # Initiate start crawl timestamp and end crawl timestamp (default to today)
         to_date = datetime.now()
@@ -44,7 +47,7 @@ class VnExpressCrawler():
         # Also obtainable from https://vnexpress.net/microservice/fc
         # or https://s1cdn.vnecdn.net/vnexpress/restruct/j/v4873/v3/production/config/category.js
         categories = {
-            # 1001005: "thoi-su",
+            1001005: "thoi-su",
             1003450: "goc-nhin",
             # 1001002: "the-gioi",
             # 1003159: "kinh-doanh",
@@ -67,7 +70,6 @@ class VnExpressCrawler():
 
         # Aggregated list of all article in the query.
         article_master_list = []
-        tasks = []
         url_pattern = f"{self.article_query_url}?cateid=%d&fromdate=%d&todate=%d"
 
         # Make start URLS from categories above
@@ -77,7 +79,12 @@ class VnExpressCrawler():
             async for article_list in self.__follow_urls__(start_urls, session):
                 # Reserve space to limit buffer length of article_master_list here.
                 article_master_list.extend(article_list)
-        return article_master_list
+                if len(article_master_list) >= self.buffer_limit:
+                    yield article_master_list
+                    article_master_list = []
+
+        if article_master_list:
+            yield article_master_list
 
     async def __follow_urls__(self, url_queue: list, session):
         """

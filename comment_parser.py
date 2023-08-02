@@ -2,7 +2,8 @@ import re
 import json
 import logging
 import asyncio
-from crawl_session import CrawlSession
+from crawlers.crawl_session import CrawlSession
+from schema.article import Article
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class CommentParser:
         # API to get comment reply
         self.comment_reply_api = f"{self.base_url}/index/getreplay"
 
-    async def start(self, article_list):
+    async def start(self, article_list: list[Article]):
         """
         Start parse comment pipeline from given article list (list[Article])
         """
@@ -25,7 +26,7 @@ class CommentParser:
             comment_count_dict = await self.__get_comment_count__(article_list, session)
             await self.__get_comment_details__(article_list, comment_count_dict, session)
 
-    async def __get_comment_count__(self, article_list, session):
+    async def __get_comment_count__(self, article_list: list[Article], session):
         """
         Query for all article comment counts. Allow for early process if comment count is 0.
 
@@ -46,7 +47,7 @@ class CommentParser:
             logger.debug("Comment count API response length %d matched article list length %d", len(response), len(article_list))
         return response
 
-    async def __get_comment_details__(self, article_list, comment_count_dict: dict, session):
+    async def __get_comment_details__(self, article_list: list[Article], comment_count_dict: dict, session):
         """
         Query for all article comment details and calculate their score. Skip article with only 0 comment.
 
@@ -54,6 +55,7 @@ class CommentParser:
             article_list: List of Article objects.
             session: Current session.
         """
+        logger.debug("Comment parser started parsing %d articles.", len(article_list))
 
         # Query for first level comments
         # ------------------------------
@@ -121,8 +123,8 @@ class CommentParser:
 
         # Final log
         for article in article_list:
-            logger.debug("Article %s (%s) score set to %d", article.full_identifier, article.title, article.score)
-        return article
+            logger.debug("Article %s score set to %d (%s)", article.full_identifier, article.score, article.title)
+        return article_list
 
     def __parse_comment_count_response__(self, response: bytes):
         """

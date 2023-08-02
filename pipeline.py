@@ -1,17 +1,16 @@
 import asyncio
 from logging import config
-from vnexpress_crawler import VnExpressCrawler
+from crawlers.vnexpress_crawler import VnExpressCrawler
 from comment_parser import CommentParser
 
 class Pipeline:
     def __init__(self):
-        self.crawler = VnExpressCrawler()
+        self.crawler = VnExpressCrawler(buffer_limit=1)
         self.parser = CommentParser()
 
     async def start(self):
-        crawler_result = await self.crawler.start()
-        parser_result = await self.parser.start(crawler_result)
-        return parser_result
+        async for article_list in self.crawler.start():
+            parser_result = await self.parser.start(article_list)
 
 def config_logger(config_path):
     config.fileConfig(config_path, disable_existing_loggers=False)
