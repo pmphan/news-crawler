@@ -1,11 +1,12 @@
 import re
 import json
-import logging
 import asyncio
+from logging import getLogger
+
 from crawlers.crawl_session import CrawlSession
 from schema.article import Article
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 class CommentParser:
     def __init__(self):
@@ -24,7 +25,7 @@ class CommentParser:
         """
         async with CrawlSession() as session:
             comment_count_dict = await self.__get_comment_count__(article_list, session)
-            await self.__get_comment_details__(article_list, comment_count_dict, session)
+            return await self.__get_comment_details__(article_list, comment_count_dict, session)
 
     async def __get_comment_count__(self, article_list: list[Article], session):
         """
@@ -34,7 +35,7 @@ class CommentParser:
             article_list: List of Article objects.
             session: Current session.
         """
-        query = ";".join(map(lambda article: article.full_identifier, article_list))
+        query = ";".join(map(lambda article: article.full_identifier(), article_list))
 
         response = await session.create_request(
             url=self.comment_count_api,
@@ -42,9 +43,9 @@ class CommentParser:
             callback=self.__parse_comment_count_response__
         )
         if len(response) != len(article_list):
-            logger.error("Comment count API response length %d mismatched with article list length: %d", len(response), len(article_list))
+            logger.error("[parser] Comment count API response length %d mismatched with article list length: %d", len(response), len(article_list))
         else:
-            logger.debug("Comment count API response length %d matched article list length %d", len(response), len(article_list))
+            logger.debug("[parser] Comment count API response length %d matched article list length %d", len(response), len(article_list))
         return response
 
     async def __get_comment_details__(self, article_list: list[Article], comment_count_dict: dict, session):
@@ -55,7 +56,7 @@ class CommentParser:
             article_list: List of Article objects.
             session: Current session.
         """
-        logger.debug("Comment parser started parsing %d articles.", len(article_list))
+        logger.debug("[parser] Comment parser started parsing %d articles.", len(article_list))
 
         # Query for first level comments
         # ------------------------------
@@ -63,18 +64,18 @@ class CommentParser:
         # Hold article that actually got queried
         queried_article_list = []
         for article in article_list:
-            comment_count = comment_count_dict[article.full_identifier]
+            comment_count = comment_count_dict[article.full_identifier()]
             if comment_count == 0:
-                logger.debug("Article %s (%s) comment count is %d. Auto set score to 0.", article.full_identifier, article.title, comment_count)
+                logger.debug("[parser] Article %s (%s) comment count is %d. Auto set score to 0.", article.full_identifier(), article.title, comment_count)
             else:
                 # Query for comment details
                 params = {
                         "offset": 0,
                         "limit": comment_count,
                         "sort": "like",
-                        "objectid": article._id,
-                        "objecttype": article._type,
-                        "category_id": article._category_id,
+                        "objectid": article.article_id,
+                        "objecttype": article.article_type,
+                        "category_id": article.category_id,
                         "siteid": 1000000
                 }
                 tasks.append(session.create_request(
@@ -101,8 +102,8 @@ class CommentParser:
 
                 params = {
                     "siteid": 1000000,
-                    "objectid": article._id,
-                    "objecttype": article._type,
+                    "objectid": article.article_id,
+                    "objecttype": article.article_type,
                     "id": comment_id,
                     "offset": 0,
                     "limit": reply_count,
@@ -123,7 +124,7 @@ class CommentParser:
 
         # Final log
         for article in article_list:
-            logger.debug("Article %s score set to %d (%s)", article.full_identifier, article.score, article.title)
+            logger.debug("[parser] Article %s score set to %d (%s)", article.full_identifier(), article.score, article.title)
         return article_list
 
     def __parse_comment_count_response__(self, response: bytes):

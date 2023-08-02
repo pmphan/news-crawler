@@ -1,9 +1,9 @@
-import logging
+from logging import getLogger
 import asyncio
 from aiohttp import ClientSession, DummyCookieJar
 from concurrent.futures import ProcessPoolExecutor
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 class CrawlSession:
     def __init__(self):
@@ -39,7 +39,7 @@ class CrawlSession:
                 Extra keyword arguments for session.get
         """
         async with self._session.get(url, *args, **kwargs) as response:
-            logger.info("GET <%d> %s", response.status, response.url)
+            logger.info("[crawler] GET <%d> %s", response.status, response.url)
             response.raise_for_status()
             return await response.read()
 

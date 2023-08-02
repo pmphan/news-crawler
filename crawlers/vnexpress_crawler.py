@@ -1,14 +1,15 @@
-import logging
+from logging import getLogger
 from itertools import chain
 from datetime import datetime, timedelta
 
 import asyncio
 from bs4 import BeautifulSoup
 
+from .crawl_session import CrawlSession
 from schema.article import Article
-from crawlers.crawl_session import CrawlSession
 
-logger = logging.getLogger(__name__)
+
+logger = getLogger(__name__)
 
 class VnExpressCrawler():
 
@@ -154,11 +155,11 @@ class VnExpressCrawler():
             article_lists.append(
                 Article(
                     url=url, title=title,
-                    _id=article_id, _type=article_type,
-                    _category_id=category_id
+                    article_id=article_id, article_type=article_type,
+                    category_id=category_id
                 )
             )
-        logger.debug("Extracted %d articles.", len(article_lists))
+        logger.debug("[crawler] Extracted %d articles.", len(article_lists))
         return article_lists
  
     def __extract_next_page__(self, soup):
