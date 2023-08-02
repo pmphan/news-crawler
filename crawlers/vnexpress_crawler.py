@@ -101,7 +101,9 @@ class VnExpressCrawler():
         while not terminate:
             tasks = []
             for url in url_queue:
-                if url is not None:
+                # Ignore None result and ignore url that doesn't match schema.
+                if (url is not None) and (url.startswith(self.article_query_url)):
+                    logger.debug("[vnexpress] Created GET %s", url)
                     tasks.append(
                         # Parse article returning list of article and next page links.
                         session.create_request(
@@ -116,7 +118,7 @@ class VnExpressCrawler():
                 # Unzip result (of form [[article_list, url], [article_list, url],...])
                 # into separate [article list, article_list,...] and [url, url,...]
                 article_dicts, url_queue = list(zip(*result))
-                yield dict(reduce(lambda d1, d2: {**d1, **d2}, article_dicts)).values()
+                yield dict(reduce(lambda d1, d2: {**d1, **d2}, article_dicts, {})).values()
 
     def __parse_articles_query_result__(self, text):
         """
@@ -141,25 +143,29 @@ class VnExpressCrawler():
             soup: The parsed version of the html.
         """
         article_dicts = {}          # {url: Article}
-        article_blocks = soup.select("article.item-news-common")
-        category_id = soup.select_one("nav.main-nav li.active").attrs["data-id"]
+        try:
+            article_blocks = soup.select("article.item-news-common")
+            category_id = soup.select_one("nav.main-nav li.active").attrs["data-id"]
 
-        for article_block in article_blocks:
-            title = article_block.select_one("h3").text
-            url = article_block.select_one("h3 a").attrs["href"]
+            for article_block in article_blocks:
+                title = article_block.select_one("h3").text
+                url = article_block.select_one("h3 a").attrs["href"]
 
-            article_meta = article_block.select_one("span.txt_num_comment")
-            article_id = article_meta.attrs["data-objectid"]
-            article_type = article_meta.attrs["data-objecttype"]
+                article_meta = article_block.select_one("span.txt_num_comment")
+                article_id = article_meta.attrs["data-objectid"]
+                article_type = article_meta.attrs["data-objecttype"]
 
-            article_dicts[url] = (
-                Article(
-                    url=url, title=title,
-                    article_id=article_id, article_type=article_type,
-                    category_id=category_id
+                article_dicts[url] = (
+                    Article(
+                        url=url, title=title,
+                        article_id=article_id, article_type=article_type,
+                        category_id=category_id
+                    )
                 )
-            )
-        logger.debug("[crawler] Extracted %d articles.", len(article_dicts))
+            logger.debug("[crawler] Extracted %d articles.", len(article_dicts))
+        except AttributeError:
+            # Ignore attribute error in case attrs cannot be found.
+            pass
         return article_dicts
  
     def __extract_next_page__(self, soup):

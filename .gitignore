@@ -6,3 +6,6 @@ venv
 
 # My output file
 output.txt
+
+# My log file
+crawler.log

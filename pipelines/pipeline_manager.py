@@ -7,24 +7,28 @@ from database.article_service import ArticleService
 
 logger = getLogger(__name__)
 
-class Singleton:
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(Singleton, cls).__new__(cls)
-        return cls.instance
+class Singleton (type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
-class PipelineManager(Singleton):
-    async def init_services(self, config):
+class PipelineManager(metaclass=Singleton):
+    def __init__(self, config):
+        self.config = config
+
+    async def init_services(self):
         """
         Init all needed services.
         """
-        await self.init_db(config)
+        await self.init_db(self.config)
 
         self.parser = CommentParser()
 
-        if "crawler" in config:
+        if "crawler" in self.config:
             logger.info("[crawler] Initing VnExpress crawler.")
-            crawler_config = config["crawler"]
+            crawler_config = self.config["crawler"]
             self.init_crawler(crawler_config)
         else:
             raise ValueError(

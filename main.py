@@ -16,34 +16,30 @@ def config_services(config_path):
     cparser.read(config_path)
     return cparser
 
-async def run_crawler():
-    config_logger("config/logging.ini")
-    sv_config = config_services("config/service.ini")
-    pipeline = PipelineManager()
-    await pipeline.init_services(sv_config)
+async def run_crawler(pipeline):
     await pipeline.start()
 
-async def get_result():
+async def get_result(pipeline, output_path=None):
+    # Get output path
+    await pipeline.get_ranked_result(output_path)
+
+async def main():
     config_logger("config/logging.ini")
     sv_config = config_services("config/service.ini")
-    pipeline = PipelineManager()
-    await pipeline.init_services(sv_config)
-
-    # Get output path
+    pipeline = PipelineManager(sv_config)
+    await pipeline.init_services()
     output = None
     if sv_config["output"]:
         output = sv_config["output"]["name"]
-    await pipeline.get_ranked_result(output)
 
-async def main():
     parser = ArgumentParser(prog="run_crawl", description="Run crawler.")
     parser.add_argument("-r", "--result", help="Flag to only read result from DB instead of running crawl.", action="store_true")
     args = parser.parse_args()
     if args.result:
-        await get_result()
+        await get_result(pipeline, output)
     else:
-        await run_crawler()
-        await get_result()
+        await run_crawler(pipeline)
+        await get_result(pipeline, output)
 
 if __name__ == "__main__":
     asyncio.run(main())
