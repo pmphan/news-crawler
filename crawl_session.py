@@ -39,11 +39,11 @@ class CrawlSession:
                 Extra keyword arguments for session.get
         """
         async with self._session.get(url, *args, **kwargs) as response:
-            logger.info("Crawled <%d> GET %s", response.status, response.url)
+            logger.info("GET <%d> %s", response.status, response.url)
             response.raise_for_status()
             return await response.read()
 
-    async def create_request(self, url, callback=None, *args, **kwargs):
+    async def create_request(self, url, callback=None, cb_args=[], *args, **kwargs):
         """
         Create a request with callback.
 
@@ -52,6 +52,8 @@ class CrawlSession:
                 URL of GET request.
             callback:
                 Callback function to be called when request finished, take request output as arguments.
+            cb_args:
+                List of extra arguments to pass to call back function.
             *args:
                 Extra positional arguments for GET request.
             **kwargs:
@@ -60,5 +62,5 @@ class CrawlSession:
         response = await self.fetch(url, *args, **kwargs)
         if callback:
             loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(self._executor, callback, response)
+            return await loop.run_in_executor(self._executor, callback, response, *cb_args)
         return response

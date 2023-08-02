@@ -1,12 +1,14 @@
 import logging
 from logging import config
+from itertools import chain
 from datetime import datetime, timedelta
 
 import asyncio
 from bs4 import BeautifulSoup
 
-from crawl_session import CrawlSession
 from schema.article import Article
+from crawl_session import CrawlSession
+from comment_parser import CommentParser
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,7 @@ class VnExpressCrawler():
         # Also obtainable from https://vnexpress.net/microservice/fc
         # or https://s1cdn.vnecdn.net/vnexpress/restruct/j/v4873/v3/production/config/category.js
         categories = {
-            1001005: "thoi-su",
+            # 1001005: "thoi-su",
             1003450: "goc-nhin",
             # 1001002: "the-gioi",
             # 1003159: "kinh-doanh",
@@ -75,14 +77,16 @@ class VnExpressCrawler():
 
         async with CrawlSession() as session:
             async for article_list in self.__follow_urls__(start_urls, session):
+                # Reserve space to limit buffer length of article_master_list here.
                 article_master_list.extend(article_list)
+        return article_master_list
 
-    async def __follow_urls__(self, queue: list, session):
+    async def __follow_urls__(self, url_queue: list, session):
         """
         Follow URLs and goto next page links (if exists) one at at time down until no more next page.
 
         Args:
-            queue:
+            url_queue:
                 Starting urls list
             session:
                 Current CrawlSession
@@ -90,9 +94,10 @@ class VnExpressCrawler():
         terminate = False
         while not terminate:
             tasks = []
-            for url in queue:
+            for url in url_queue:
                 if url is not None:
                     tasks.append(
+                        # Parse article returning list of article and next page links.
                         session.create_request(
                             url, callback=self.__parse_articles_query_result__
                         )
@@ -102,8 +107,10 @@ class VnExpressCrawler():
                 terminate = True
             else:
                 result = await asyncio.gather(*tasks)
-                article_lists, queue = list(zip(*result))
-                yield article_lists
+                # Unzip result (of form [[article_list, url], [article_list, url],...])
+                # into separate [article list, article_list,...] and [url, url,...]
+                article_lists, url_queue = list(zip(*result))
+                yield chain.from_iterable(article_lists)
 
     def __parse_articles_query_result__(self, text):
         """
@@ -127,8 +134,10 @@ class VnExpressCrawler():
         Args:
             soup: The parsed version of the html.
         """
-        article_blocks = soup.select("article.item-news-common")
         article_lists = []
+        article_blocks = soup.select("article.item-news-common")
+        category_id = soup.select_one("nav.main-nav li.active").attrs["data-id"]
+
         for article_block in article_blocks:
             title = article_block.select_one("h3").text
             url = article_block.select_one("h3 a").attrs["href"]
@@ -140,9 +149,11 @@ class VnExpressCrawler():
             article_lists.append(
                 Article(
                     url=url, title=title,
-                    _id=article_id, _type=article_type
+                    _id=article_id, _type=article_type,
+                    _category_id=category_id
                 )
             )
+        logger.debug("Extracted %d articles.", len(article_lists))
         return article_lists
  
     def __extract_next_page__(self, soup):
@@ -165,7 +176,9 @@ def config_logger(config_path):
 
 async def main():
     config_logger("config/logging.ini")
-    crawler = VnExpressCrawler(days_ago=4)
-    await crawler.start()
+    crawler = VnExpressCrawler(days_ago=2)
+    article_list = await crawler.start()
+    parser = CommentParser()
+    comment_count = await parser.start(article_list)
 
 asyncio.run(main())
