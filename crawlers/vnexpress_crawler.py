@@ -1,5 +1,5 @@
 from logging import getLogger
-from itertools import chain
+from functools import reduce
 from datetime import datetime, timedelta
 
 import asyncio
@@ -50,22 +50,22 @@ class VnExpressCrawler():
         categories = {
             1001005: "thoi-su",
             1003450: "goc-nhin",
-            # 1001002: "the-gioi",
-            # 1003159: "kinh-doanh",
-            # 1005628: "bat-dong-san",
-            # 1002691: "giai-tri",
-            # 1002565: "the-thao",
-            # 1001007: "phap-luat",
-            # 1003497: "giao-duc",
-            # 1003750: "suc-khoe",
-            # 1002966: "doi-song",
-            # 1003231: "du-lich",
-            # 1001009: "khoa-hoc",
-            # 1002592: "so-hoa",
-            # 1001006: "xe",
-            # 1001012: "y-kien",
-            # 1001014: "tam-su",
-            # 1001011: "cuoi",
+            1001002: "the-gioi",
+            1003159: "kinh-doanh",
+            1005628: "bat-dong-san",
+            1002691: "giai-tri",
+            1002565: "the-thao",
+            1001007: "phap-luat",
+            1003497: "giao-duc",
+            1003750: "suc-khoe",
+            1002966: "doi-song",
+            1003231: "du-lich",
+            1001009: "khoa-hoc",
+            1002592: "so-hoa",
+            1001006: "xe",
+            1001012: "y-kien",
+            1001014: "tam-su",
+            1001011: "cuoi",
             # 1004565: "tuyen-dau-chong-dich"       # empty category
         }
 
@@ -115,8 +115,8 @@ class VnExpressCrawler():
                 result = await asyncio.gather(*tasks)
                 # Unzip result (of form [[article_list, url], [article_list, url],...])
                 # into separate [article list, article_list,...] and [url, url,...]
-                article_lists, url_queue = list(zip(*result))
-                yield chain.from_iterable(article_lists)
+                article_dicts, url_queue = list(zip(*result))
+                yield dict(reduce(lambda d1, d2: {**d1, **d2}, article_dicts)).values()
 
     def __parse_articles_query_result__(self, text):
         """
@@ -129,9 +129,9 @@ class VnExpressCrawler():
             list of articles, url to next page (None if no url)
         """
         soup = BeautifulSoup(text, 'html.parser')
-        article_lists = self.__extract_articles__(soup)
+        article_dicts = self.__extract_articles__(soup)
         next_page_url = self.__extract_next_page__(soup)
-        return (article_lists, next_page_url)
+        return (article_dicts, next_page_url)
 
     def __extract_articles__(self, soup):
         """
@@ -140,7 +140,7 @@ class VnExpressCrawler():
         Args:
             soup: The parsed version of the html.
         """
-        article_lists = []
+        article_dicts = {}          # {url: Article}
         article_blocks = soup.select("article.item-news-common")
         category_id = soup.select_one("nav.main-nav li.active").attrs["data-id"]
 
@@ -152,15 +152,15 @@ class VnExpressCrawler():
             article_id = article_meta.attrs["data-objectid"]
             article_type = article_meta.attrs["data-objecttype"]
 
-            article_lists.append(
+            article_dicts[url] = (
                 Article(
                     url=url, title=title,
                     article_id=article_id, article_type=article_type,
                     category_id=category_id
                 )
             )
-        logger.debug("[crawler] Extracted %d articles.", len(article_lists))
-        return article_lists
+        logger.debug("[crawler] Extracted %d articles.", len(article_dicts))
+        return article_dicts
  
     def __extract_next_page__(self, soup):
         """
