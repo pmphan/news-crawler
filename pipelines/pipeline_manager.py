@@ -1,21 +1,30 @@
+from logging import getLogger
 from crawlers.vnexpress_crawler import VnExpressCrawler
 from parsers.comment_parser import CommentParser
 from database.postgres import Postgres
 from schema.postgres import Base
 from database.article_service import ArticleService
 
-class PipelineManager:
+logger = getLogger(__name__)
+
+class Singleton:
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Singleton, cls).__new__(cls)
+        return cls.instance
+
+class PipelineManager(Singleton):
     async def init_services(self, config):
         """
         Init all needed services.
         """
-        self.init_db(self, config)
+        await self.init_db(config)
 
         self.parser = CommentParser()
 
         if "crawler" in config:
             logger.info("[crawler] Initing VnExpress crawler.")
-            crawler_config = config["crawlers"]
+            crawler_config = config["crawler"]
             self.init_crawler(crawler_config)
         else:
             raise ValueError(
@@ -34,7 +43,7 @@ class PipelineManager:
             raise ValueError(
                 f"[config] Crawler \'{crawler_config['name']}\' not supported.")
 
-    async def init_db(self):
+    async def init_db(self, config):
         """
         Start connection to db and create all database.
         """
@@ -72,6 +81,8 @@ class PipelineManager:
         if output:
             with open(output, 'w') as f:
                 f.writelines(result_map)
+            logger.debug("Wrote %d output to %s", len(result), output)
         else:
+            logger.debug("Logging %d output to stdout...", len(result))
             for line in result_map:
-                print(line)
+                print(line, end="")

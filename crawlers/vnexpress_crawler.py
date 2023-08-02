@@ -31,11 +31,11 @@ class VnExpressCrawler():
         self.article_query_url = "https://vnexpress.net/category/day"
 
         # How many article to return each crawl. This is not a hard limit.
-        self.buffer_limit = buffer_limit
+        self.buffer_limit = int(buffer_limit)
 
         # Initiate start crawl timestamp and end crawl timestamp (default to today)
         to_date = datetime.now()
-        from_date = to_date - timedelta(days_ago)
+        from_date = to_date - timedelta(int(days_ago))
 
         self.from_timestamp = int(from_date.timestamp())
         self.to_timestamp = int(to_date.timestamp())
