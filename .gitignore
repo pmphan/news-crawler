@@ -3,3 +3,9 @@ __pycache__
 
 # Virtual env file
 venv
+
+# My output file
+output.txt
+
+# My log file
+crawler.log
