@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .postgres_service import BasePostgresService
-from schema.postgres import Articles
+from database.schema.article import Articles
 
 class ArticleService(BasePostgresService[Articles]):
     model = Articles
