@@ -5,7 +5,7 @@ __pycache__
 venv
 
 # My output file
-output.txt
+*_output.txt
 
 # My log file
-crawler.log
+*_crawler.log

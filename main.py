@@ -6,7 +6,7 @@ from database.article_service import ArticleService
 
 from argparse import ArgumentParser
 
-logger = getLogger(__name__)
+logger = getLogger(f"scrapy.{__name__}")
 
 def config_logger(config_path):
     config.fileConfig(config_path, disable_existing_loggers=False)
