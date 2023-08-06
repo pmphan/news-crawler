@@ -66,8 +66,8 @@ COOKIES_DEBUG = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "news_crawler.pipelines.comment.CommentPipeline": 100,
-    "news_crawler.pipelines.postgres.PostgresPipeline": 200
+    #"news_crawler.pipelines.comment.CommentPipeline": 100,
+    #"news_crawler.pipelines.postgres.PostgresPipeline": 200
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

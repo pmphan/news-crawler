@@ -1,6 +1,6 @@
 
 from abc import ABCMeta, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from scrapy import Request
 from scrapy.spiders import CrawlSpider
@@ -27,11 +27,11 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
             )
             days_ago = int(days_ago)
 
-        to_date = datetime.now()
+        to_date = datetime.now(timezone.utc)
         from_date = to_date - timedelta(days=days_ago)
 
-        self.from_timestamp = int(datetime.timestamp(from_date))
-        self.to_timestamp = int(datetime.timestamp(to_date))
+        self.from_timestamp = int(from_date.timestamp())
+        self.to_timestamp = int(to_date.timestamp())
 
         if not getattr(self, "comment_counter", None):
             raise ValueError(f"Please define a valid CommentParser for {type(self).__name__}")

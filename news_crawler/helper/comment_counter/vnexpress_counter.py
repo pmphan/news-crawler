@@ -1,16 +1,26 @@
-"""
-Holds comment count parser.
-"""
-
 import re
 from functools import reduce
 from .base_counter import BaseCounter
 
 class VnExpressCounter(BaseCounter):
     """
-    Helper class to parse comment.
+    Helper class to parse comment from VnExpress.
     """
     comment_count_api = "https://usi-saas.vnexpress.net/widget/index/"
+
+    def make_comment_count_url(self, article_list):
+        """
+        Make comment count query from article list. Query is of the form:
+        https://usi-saas.vnexpress.net/widget/index/?cid=id-type;id-type;id-type;
+
+        Args:
+            article: List of Article objects.
+
+        Returns:
+            str: valid query url matching form above
+        """
+        query = reduce(lambda ac, article: f"{ac};{article.identifier}", article_list, "")
+        return f"{self.comment_count_api}?cid={query}"
 
     def parse_comment_count_response(self, response) -> str:
         """
@@ -30,17 +40,3 @@ class VnExpressCounter(BaseCounter):
         # we will also store the corresponding full-identifier
         full_ids = re.findall(r"(?<=comment-)(\d+-\d+)", str_resp)
         return dict(zip(full_ids, comment_counts))
-
-    def make_comment_count_url(self, article_list):
-        """
-        Make comment count query from article list. Query is of the form:
-        https://usi-saas.vnexpress.net/widget/index/?cid=id-type;id-type;id-type;
-
-        Args:
-            article: List of Article objects.
-
-        Returns:
-            str: id-type;id-type;id-type;
-        """
-        query = reduce(lambda ac, article: f"{ac};{article.identifier}", article_list, "")
-        return f"{self.comment_count_api}?cid={query}"

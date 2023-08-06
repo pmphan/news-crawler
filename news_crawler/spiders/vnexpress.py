@@ -24,7 +24,7 @@ class VnExpressSpider(BaseCrawler):
     )
 
     def __init__(self, *args, days_ago: int = 30, **kwargs):
-        super().__init__(self, *args, days_ago=days_ago, **kwargs)
+        super().__init__(*args, days_ago=days_ago, **kwargs)
         self.by_day_api = "https://vnexpress.net/category/day"
 
     def start_requests(self):

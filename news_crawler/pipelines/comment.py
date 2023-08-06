@@ -86,7 +86,7 @@ class CommentPipeline:
         async with self._session.get("/index/get", params=params) as response:
             logger.info("Comments GET <%d %s>", response.status, response.url)
             response.raise_for_status()
-            return await response.text()
+            return await response.json(content_type=None)
 
     async def get_comment_replys(self, adapter, comment_id, reply_count):
         """
@@ -104,14 +104,13 @@ class CommentPipeline:
         async with self._session.get("/index/getreplay", params=params) as response:
             logger.info("Replys GET <%d %s>", response.status, response.url)
             response.raise_for_status()
-            return await response.text()
+            return await response.json(content_type=None)
 
     def parse_api_response(self, response):
         """
         Parse API response into dict format and calculate sum of all user likes.
         """
-        dict_resp = json.loads(response)
-        items = dict_resp["data"]["items"]
+        items = response["data"]["items"]
         tentative_score = 0
         for item in items:
             # Early terminate because we already sorted by like count
