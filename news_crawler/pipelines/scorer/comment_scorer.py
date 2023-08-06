@@ -3,6 +3,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from logging import getLogger
 from aiohttp import ClientSession, DummyCookieJar
+from scrapy import signals
 from itemadapter import ItemAdapter
 
 
@@ -22,11 +23,13 @@ class BaseScorer(ABC):
         # Start asyncio session
         self._session = ClientSession(base_url=self.comment_api, cookie_jar=DummyCookieJar())
 
-    def close_spider(self, spider):
-        loop = asyncio.get_event_loop()
-        asyncio.create_task(self.dispose_client())
+    @classmethod
+    def from_crawler(cls, crawler):
+        scorer = cls()
+        crawler.signals.connect(scorer.spider_closed, signal=signals.spider_closed)
+        return scorer
 
-    async def dispose_client(self):
+    async def spider_closed(self, spider):
         logger.debug("Comment Async session closed.")
         await self._session.close()
 

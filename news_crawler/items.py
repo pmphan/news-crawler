@@ -4,6 +4,7 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 from abc import ABCMeta
 from typing import Literal
+from datetime import datetime
 from dataclasses import dataclass
 
 
@@ -31,6 +32,6 @@ class VnExpressArticle(BaseArticle):
 
 @dataclass(kw_only=True)
 class TuoiTreArticle(BaseArticle):
-    published_time: float       # Published timestamp in UTC
+    published_time: datetime    # Published timestamp in UTC
     category: str = ""          # Category name
     item_type: Literal["article", "video"]

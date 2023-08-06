@@ -7,6 +7,7 @@ from scrapy import Request
 from .crawler import BaseCrawler
 from news_crawler.items import TuoiTreArticle
 from news_crawler.helper.comment_counter import TuoiTreCounter
+from news_crawler.pipelines import TuoiTreScorer, PostgresPipeline
 
 class TuoiTreSpider(BaseCrawler):
     name = "tuoitre"
@@ -15,7 +16,8 @@ class TuoiTreSpider(BaseCrawler):
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'news_crawler.pipelines.scorer.TuoiTreScorer': 100
+            TuoiTreScorer: 100,
+            PostgresPipeline: 200
         }
     }
 
@@ -53,13 +55,13 @@ class TuoiTreSpider(BaseCrawler):
 
     def next_page_decider(self, article):
         """
-        Decide if continue to next page by checking article time against self.from_timestamp.
+        Decide if continue to next page by checking article time against self.from_datetime.
         Return next page url.
         """
         published_time = article.published_time
         item_type = article.item_type
-        self.logger.debug("Comparing published time %d vs query time %d", published_time, self.from_timestamp)
-        if published_time > self.from_timestamp:
+        self.logger.debug("Comparing published time %d vs query time %d", published_time, self.from_datetime)
+        if published_time > self.to_datetime:
             if item_type == "video":
                 self.video_index += 1
                 url = self.video_url
@@ -98,7 +100,7 @@ class TuoiTreSpider(BaseCrawler):
                 published_time_format = "%Y-%m-%dT%H:%M:%S%z"
             published_time = article_block.css(published_time_selector).get()
             # Convert published time from string GMT+7 to UTC timestamp
-            published_time = datetime.strptime(published_time+"+0700", published_time_format).timestamp()
+            published_time = datetime.strptime(published_time+"+0700", published_time_format)
             articles.append(TuoiTreArticle(
                 url=url,
                 title=title,

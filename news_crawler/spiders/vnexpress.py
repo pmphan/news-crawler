@@ -8,6 +8,7 @@ from scrapy.linkextractors import LinkExtractor
 from .crawler import BaseCrawler
 from news_crawler.items import VnExpressArticle
 from news_crawler.helper.comment_counter import VnExpressCounter
+from news_crawler.pipelines import VnExpressScorer, PostgresPipeline
 
 
 class VnExpressSpider(BaseCrawler):
@@ -17,7 +18,8 @@ class VnExpressSpider(BaseCrawler):
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'news_crawler.pipelines.scorer.VnExpressScorer': 100
+            VnExpressScorer: 100,
+            PostgresPipeline: 200
         }
     }
 
@@ -63,8 +65,8 @@ class VnExpressSpider(BaseCrawler):
         for cat_id in categories:
             params = {
                 "cateid": str(cat_id),
-                "fromdate": str(self.from_timestamp),
-                "todate": str(self.to_timestamp)
+                "fromdate": f"{self.from_datetime.timestamp():0.0f}",
+                "todate": f"{self.to_datetime.timestamp():0.0f}"
             }
             yield FormRequest(self.by_day_api, method="GET", formdata=params)
 

@@ -27,12 +27,14 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
             )
             days_ago = int(days_ago)
 
-        to_date = datetime.now(timezone.utc)
-        from_date = to_date - timedelta(days=days_ago)
+        self.to_datetime = datetime.now(timezone.utc)
+        self.from_datetime = self.to_datetime - timedelta(days=days_ago)
 
-        self.from_timestamp = int(from_date.timestamp())
-        self.to_timestamp = int(to_date.timestamp())
-        self.logger.debug("Crawling from timestamp %d to timestamp %d", self.from_timestamp, self.to_timestamp)
+        self.logger.debug(
+            "Crawling from %s to %s",
+            self.from_datetime.strftime("%b %d"),
+            self.to_datetime.strftime("%b %d")
+        )
 
         if not getattr(self, "comment_counter", None):
             raise ValueError(f"Please define a valid CommentParser for {type(self).__name__}")
