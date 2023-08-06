@@ -18,9 +18,9 @@ class Article:
     category_id: str            # Article category per VnExpress data
     comment_count: int = 0      # Number of comment on article
     score: int = 0              # Article score
-    full_identifier: str = ""   # article_id-article_type
+    identifier: str = ""   # article_id-article_type
 
     def __post_init__(self):
-        self.full_identifier = f"{self.article_id}-{self.article_type}"
+        self.identifier = f"{self.article_id}-{self.article_type}"
         # Enforce type for article_type
         self.article_type = int(self.article_type)

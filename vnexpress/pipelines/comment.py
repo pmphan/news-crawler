@@ -17,11 +17,16 @@ class CommentPipeline:
         self.comment_api = "https://usi-saas.vnexpress.net"
 
     def open_spider(self, spider):
+        # Start asyncio session
         self._session = ClientSession(base_url=self.comment_api, cookie_jar=DummyCookieJar())
 
     def close_spider(self, spider):
-        close_session = self._session.close()
-        asyncio.create_task(close_session)
+        loop = asyncio.get_event_loop()
+        asyncio.create_task(self.dispose_client())
+
+    async def dispose_client(self):
+        logger.debug("Comment Async session closed.")
+        await self._session.close()
 
     async def process_item(self, item, spider):
         """
@@ -31,7 +36,7 @@ class CommentPipeline:
         if adapter["comment_count"] <= 0:
             logger.debug(
                 "Article %s (%s) has 0 comment. Auto-skipped.",
-                adapter["full_identifier"], adapter["title"]
+                adapter["identifier"], adapter["title"]
             )
             return item
 
@@ -39,7 +44,7 @@ class CommentPipeline:
         adapter["score"] = score
         logger.debug(
             "Article %s set score to %d (%s)",
-            adapter["full_identifier"], adapter["score"], adapter["title"]
+            adapter["identifier"], adapter["score"], adapter["title"]
         )
         return item
 

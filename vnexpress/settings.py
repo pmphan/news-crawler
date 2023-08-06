@@ -66,8 +66,8 @@ COOKIES_DEBUG = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "vnexpress.pipelines.comment.CommentPipeline": 100,
-    "vnexpress.pipelines.postgres.PostgresPipeline": 200
+    #"vnexpress.pipelines.comment.CommentPipeline": 100,
+    #"vnexpress.pipelines.postgres.PostgresPipeline": 200
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

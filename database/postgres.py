@@ -19,7 +19,8 @@ class Postgres:
         self.engine = create_async_engine(self.uri)
         logger.info("Postgres URI: %s", self.uri)
 
-    async def close_session(self):
+    async def close_db(self):
+        logger.debug("Postgres engine disposed.")
         await self.engine.dispose()
 
     async def init_db(self, metadata):

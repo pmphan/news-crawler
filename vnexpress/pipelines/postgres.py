@@ -24,13 +24,16 @@ class PostgresPipeline:
 
     def open_spider(self, spider):
         initdb = self.postgres.init_db(Base.metadata)
-        asyncio.get_event_loop().run_until_complete(initdb)
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(initdb)
 
     def close_spider(self, spider):
-        upsert_rest = self.upsert_current_to_db()
-        asyncio.get_running_loop.run_until_complete(upsert_rest)
-        close_pg = self.postgres.close_session()
-        asyncio.get_running_loop.run_until_complete(close_pg)
+        self.loop.create_task(self.upsert_and_close_db())
+
+    async def upsert_and_close_db(self):
+        await self.upsert_current_to_db()
+        logger.debug("Done upserting final objects to db.")
+        await self.postgres.close_db()
 
     async def process_item(self, item, spider):
         self.article_buffer.append(item)
@@ -43,7 +46,7 @@ class PostgresPipeline:
         dict_list = []
         for article in self.article_buffer:
             insert_obj = dict(ItemAdapter(article)) 
-            insert_obj.pop("full_identifier")
+            insert_obj.pop("identifier")
             dict_list.append(insert_obj)
 
         async with self.postgres.engine.connect() as db_conn:

@@ -4,20 +4,15 @@ Holds comment count parser.
 
 import re
 from functools import reduce
+from .base_counter import BaseCounter
 
-class CommentCountParser:
+class VnExpressCounter(BaseCounter):
     """
     Helper class to parse comment.
     """
+    comment_count_api = "https://usi-saas.vnexpress.net/widget/index/"
 
-    def __init__(self):
-        """
-        Initiate vnexpress comment api helper class.
-        """
-        # API to get comment count
-        self.comment_count_api = "https://usi-saas.vnexpress.net/widget/index/"
-
-    def parse_comment_count_response(self, response):
+    def parse_comment_count_response(self, response) -> str:
         """
         Comment count api gives response in format:
         CmtWidget.parse('widget-comment-%full-identifier%', %comment-count%);...
@@ -36,7 +31,7 @@ class CommentCountParser:
         full_ids = re.findall(r"(?<=comment-)(\d+-\d+)", str_resp)
         return dict(zip(full_ids, comment_counts))
 
-    def make_comment_count_query(self, article_list):
+    def make_comment_count_url(self, article_list):
         """
         Make comment count query from article list. Query is of the form:
         https://usi-saas.vnexpress.net/widget/index/?cid=id-type;id-type;id-type;
@@ -47,4 +42,5 @@ class CommentCountParser:
         Returns:
             str: id-type;id-type;id-type;
         """
-        return reduce(lambda ac, article: f"{ac};{article.full_identifier}", article_list, "")
+        query = reduce(lambda ac, article: f"{ac};{article.identifier}", article_list, "")
+        return f"{self.comment_count_api}?cid={query}"
