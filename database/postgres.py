@@ -8,14 +8,19 @@ logger = getLogger(f"scrapy.{__name__}")
 
 class Postgres:
 
-    def __init__(self, user, password, database, host="localhost", port=5432):
-        self.uri = "postgresql+asyncpg://{}:{}@{}:{}/{}".format(
-            user,
-            password,
-            host,
-            port,
-            database
-        )
+    def __init__(self, uri=None, user=None, password=None, database=None, host="localhost", port=5432):
+        if uri is not None:
+            self.uri = uri
+        else:
+            if None in (user, password, database, host, port):
+                raise ValueError("Can't construct URI from None value.")
+            self.uri = "postgresql+asyncpg://{}:{}@{}:{}/{}".format(
+                user,
+                password,
+                host,
+                port,
+                database
+            )
         self.engine = create_async_engine(self.uri)
         logger.info("Postgres URI: %s", self.uri)
 

@@ -60,7 +60,11 @@ class TuoiTreSpider(BaseCrawler):
         """
         published_time = article.published_time
         item_type = article.item_type
-        self.logger.debug("Comparing published time %d vs query time %d", published_time, self.from_datetime)
+        self.logger.debug(
+            "Comparing published time %s vs query time %s",
+            published_time.strftime("%b %d %H:%M:%S"),
+            self.from_datetime.strftime("%b %d %H:%M:%S")
+        )
         if published_time > self.to_datetime:
             if item_type == "video":
                 self.video_index += 1

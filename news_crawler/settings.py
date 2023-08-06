@@ -6,6 +6,10 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+from os import environ
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BOT_NAME = "news_crawler"
 
@@ -95,3 +99,17 @@ COOKIES_DEBUG = True
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+# Postgres Database settings
+POSTGRES_PIPELINE_SETTINGS = {
+    "URI": environ.get(
+        "POSTGRES_URI", "postgresql+asyncpg://{}:{}@{}:{}/{}".format(
+            environ.get("POSTGRES_USER", "postgres"),
+            environ.get("POSTGRES_PASSWORD", "postgres"),
+            environ.get("POSTGRES_HOST", "localhost"),
+            environ.get("POSTGRES_PORT", 5432),
+            environ.get("POSTGRES_DB", "postgres")
+        )
+    ),
+    "BUFFER_SIZE": environ.get("BUFFER_SIZE", 100)
+}
