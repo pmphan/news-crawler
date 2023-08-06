@@ -62,9 +62,6 @@ class VnExpressSpider(BaseCrawler):
             }
             yield FormRequest(self.by_day_api, method="GET", formdata=params)
 
-    def parse_start_url(self, response, **kwargs):
-        yield from self.parse_articles(response)
-
     def get_article_list(self, response):
         """
         Get list of articles from response.

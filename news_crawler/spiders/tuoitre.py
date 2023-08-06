@@ -9,10 +9,6 @@ class TuoiTreSpider(BaseCrawler):
     name = "tuoitre"
     allowed_domains = ["tuoitre.vn"]
     comment_counter = TuoiTreCounter()
-    start_urls = [
-        "https://tuoitre.vn/timeline/0/trang-1.htm",
-        "https://tuoitre.vn/timeline/search.htm?pageindex=1"
-    ]
 
     def __init__(self, *args, days_ago: int = 30, **kwargs):
         super().__init__(*args, days_ago=days_ago, **kwargs)
@@ -28,13 +24,48 @@ class TuoiTreSpider(BaseCrawler):
         return f"https://tuoitre.vn/timeline/search.htm?pageindex={self.video_index}"
 
     def start_requests(self):
-        yield Request(url=self.article_url)
+        #yield Request(url=self.article_url)
         yield Request(url=self.video_url)
 
-    def parse_start_url(self, response, **kwargs):
-        yield from self.parse_articles(response)
+    def populate_comment_count(self, response, articles: list):
+        """
+        Override super's populate comment count to also decide if go onto next page.
+        Decide by comparing the last article's published time and compare it with our date range.
+        """
+        last_article = yield from super().populate_comment_count(response, articles)
+        next_page_url = self.next_page_decider(last_article)
+        if next_page_url:
+            yield Request(url=next_page_url, callback=self.parse_start_url)
+        else:
+            self.logger.debug(
+                "Stopped going to next page for %s. Article index: %s. Video index: %s",
+                last_article.item_type, self.article_index, self.video_index
+            )
+
+    def next_page_decider(self, article):
+        """
+        Decide if continue to next page by checking article time against self.from_timestamp.
+        Return next page url.
+        """
+        published_time = article.published_time
+        item_type = article.item_type
+        self.logger.debug("Comparing published time %d vs query time %d", published_time, self.from_timestamp)
+        if published_time > self.from_timestamp:
+            if item_type == "video":
+                self.video_index += 1
+                url = self.video_url
+            else:
+                self.article_index += 1
+                url = self.article_url
+            return url
 
     def get_article_list(self, response):
+        """
+        Get list of articles from response.
+
+        Return:
+            list of Article objects.
+        """
         article_block_selector = ".box-category-item"
         articles = []
 

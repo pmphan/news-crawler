@@ -32,11 +32,12 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
 
         self.from_timestamp = int(from_date.timestamp())
         self.to_timestamp = int(to_date.timestamp())
+        self.logger.debug("Crawling from timestamp %d to timestamp %d", self.from_timestamp, self.to_timestamp)
 
         if not getattr(self, "comment_counter", None):
             raise ValueError(f"Please define a valid CommentParser for {type(self).__name__}")
 
-    def parse_articles(self, response):
+    def parse_start_url(self, response, **kwargs):
         """
         Get list of article links from search result.
 
@@ -49,6 +50,7 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
         # Query for comment count and populate Article object with it.
         yield Request(
             self.comment_counter.make_comment_count_url(articles),
+            dont_filter=True,
             method="GET",
             callback=self.populate_comment_count,
             cb_kwargs={"articles": articles}
@@ -65,6 +67,7 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
         for article in articles:
             article.comment_count = comment_count_dict[article.identifier]
             yield article
+        return article
 
     @abstractmethod
     def get_article_list(self, response):
