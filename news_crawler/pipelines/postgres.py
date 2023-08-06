@@ -3,7 +3,7 @@ from logging import getLogger
 from database.postgres import Postgres
 from itemadapter import ItemAdapter
 
-from database.services.article_service import ArticleService
+from database.services.article_service import VnExpressDBService
 from database.schema.base import Base
 
 logger = getLogger(f"scrapy.{__name__}")
@@ -50,7 +50,7 @@ class PostgresPipeline:
             dict_list.append(insert_obj)
 
         async with self.postgres.engine.connect() as db_conn:
-            await ArticleService.bulk_upsert(db_conn, dict_list)
+            await VnExpressDBService.bulk_upsert(db_conn, dict_list)
         logger.info("Upserted %d items to db", len(dict_list))
         # Reset buffer
         self.article_buffer = []

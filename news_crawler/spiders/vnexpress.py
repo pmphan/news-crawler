@@ -1,15 +1,13 @@
 """
 VnExpress crawler.
 """
-from datetime import datetime, timedelta
-
 from scrapy import FormRequest
 from scrapy.spiders import Rule
 from scrapy.linkextractors import LinkExtractor
 
 from .crawler import BaseCrawler
-from vnexpress.items import Article
-from vnexpress.helper.comment_counter import VnExpressCounter
+from news_crawler.items import VnExpressArticle
+from news_crawler.helper.comment_counter import VnExpressCounter
 
 
 class VnExpressSpider(BaseCrawler):
@@ -85,7 +83,7 @@ class VnExpressSpider(BaseCrawler):
             title = article_block.css("h3 a::text").get()
             article_id = article_block.css("span.txt_num_comment::attr(data-objectid)").get()
             article_type = article_block.css("span.txt_num_comment::attr(data-objecttype)").get()
-            articles.append(Article(
+            articles.append(VnExpressArticle(
                 url=url,
                 title=title,
                 article_id=article_id,

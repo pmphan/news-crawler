@@ -35,6 +35,12 @@ class BasePostgresService(Generic[TableType]):
         return result.scalars().all()
 
     @classmethod
+    async def get_all_article_ranked(cls, db: AsyncSession):
+        query = select(cls.model).order_by(cls.model.score.desc())
+        result = await db.execute(query)
+        return result.scalars().all()
+
+    @classmethod
     async def bulk_upsert(cls, db: AsyncSession, obj_list: list[dict]):
         """
         Utilize Postgres' ON CONFLICT DO UPDATE to bulk upsert items.

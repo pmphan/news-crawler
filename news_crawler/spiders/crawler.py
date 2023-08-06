@@ -3,11 +3,9 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime, timedelta
 
 from scrapy import Request
-from scrapy.spiders import CrawlSpider, Rule
-from scrapy.linkextractors import LinkExtractor
+from scrapy.spiders import CrawlSpider
 
-from vnexpress.items import Article
-from vnexpress.helper.comment_counter import BaseCounter
+from news_crawler.helper.comment_counter import BaseCounter
 
 
 class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
@@ -56,7 +54,7 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
             cb_kwargs={"articles": articles}
         )
 
-    def populate_comment_count(self, response, articles: list[Article]):
+    def populate_comment_count(self, response, articles: list):
         """
         Add comment count data to article and yield.
 

@@ -7,10 +7,10 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "vnexpress"
+BOT_NAME = "news_crawler"
 
-SPIDER_MODULES = ["vnexpress.spiders"]
-NEWSPIDER_MODULE = "vnexpress.spiders"
+SPIDER_MODULES = ["news_crawler.spiders"]
+NEWSPIDER_MODULE = "news_crawler.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -66,8 +66,8 @@ COOKIES_DEBUG = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    #"vnexpress.pipelines.comment.CommentPipeline": 100,
-    #"vnexpress.pipelines.postgres.PostgresPipeline": 200
+    "news_crawler.pipelines.comment.CommentPipeline": 100,
+    "news_crawler.pipelines.postgres.PostgresPipeline": 200
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

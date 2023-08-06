@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Identity, BigInteger, DateTime
+from sqlalchemy import Column, Identity, BigInteger, String, Integer, DateTime
 from sqlalchemy.orm import registry, declared_attr
 from sqlalchemy.sql.functions import current_timestamp
 
@@ -13,3 +13,7 @@ class Base(object):
     id = Column(BigInteger, Identity(always=True), primary_key=True)
     create_time = Column(DateTime(timezone=True), server_default=current_timestamp())
     update_time = Column(DateTime(timezone=True), server_default=current_timestamp(), onupdate=current_timestamp())
+    url = Column(String(256), index=True, nullable=False, unique=True)
+    title = Column(String(256), nullable=False)
+    score = Column(Integer, index=True, nullable=False, default=0)
+    comment_count = Column(Integer, nullable=False, default=0)

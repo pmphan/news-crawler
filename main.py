@@ -2,7 +2,7 @@ import asyncio
 from logging import config, getLogger
 from configparser import ConfigParser
 from pipelines.pipeline_manager import PipelineManager
-from database.article_service import ArticleService
+from database.article_service import VnExpressDBService
 
 from argparse import ArgumentParser
 
