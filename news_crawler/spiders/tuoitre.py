@@ -1,3 +1,6 @@
+"""
+TuoiTre crawler.
+"""
 from datetime import datetime
 from scrapy import Request
 
@@ -9,6 +12,12 @@ class TuoiTreSpider(BaseCrawler):
     name = "tuoitre"
     allowed_domains = ["tuoitre.vn"]
     comment_counter = TuoiTreCounter()
+
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'news_crawler.pipelines.scorer.TuoiTreScorer': 100
+        }
+    }
 
     def __init__(self, *args, days_ago: int = 30, **kwargs):
         super().__init__(*args, days_ago=days_ago, **kwargs)
@@ -24,7 +33,7 @@ class TuoiTreSpider(BaseCrawler):
         return f"https://tuoitre.vn/timeline/search.htm?pageindex={self.video_index}"
 
     def start_requests(self):
-        #yield Request(url=self.article_url)
+        yield Request(url=self.article_url)
         yield Request(url=self.video_url)
 
     def populate_comment_count(self, response, articles: list):

@@ -15,6 +15,12 @@ class VnExpressSpider(BaseCrawler):
     allowed_domains = ["vnexpress.net"]
     comment_counter = VnExpressCounter()
 
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'news_crawler.pipelines.scorer.VnExpressScorer': 100
+        }
+    }
+
     rules = (
         Rule(
             # Rule to extract and follow next page link
