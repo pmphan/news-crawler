@@ -6,11 +6,11 @@ from sqlalchemy.sql.functions import current_timestamp
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from schema.postgres import Base
+from database.schema.base import Base
 
 TableType = TypeVar("TableType", bound=Base)
 
-logger = getLogger(__name__)
+logger = getLogger(f"scrapy.{__name__}")
 
 class BasePostgresService(Generic[TableType]):
     """
@@ -26,20 +26,21 @@ class BasePostgresService(Generic[TableType]):
     async def get_one(cls, db: AsyncSession, _filter: dict):
         query = select(cls.model).filter_by(**_filter)
         result = await db.execute(query)
-        return result.scalars().first()
+        return result.first()
 
     @classmethod
     async def get_list(cls, db: AsyncSession, _filter: dict):
         query = select(cls.model).filter_by(**_filter)
         result = await db.execute(query)
-        return result.scalars().all()
+        return result.all()
 
     @classmethod
-    async def bulk_upsert(cls, db: AsyncSession, obj_list: list):
-        logger.debug("[db] Upserting %d objects into db..." % len(obj_list))
-
-        dict_list = [obj.dict() for obj in obj_list]
-        stmt = insert(cls.model).values(dict_list)
+    async def bulk_upsert(cls, db: AsyncSession, obj_list: list[dict]):
+        """
+        Utilize Postgres' ON CONFLICT DO UPDATE to bulk upsert items.
+        """
+        logger.debug("Upserting %d objects into db..." % len(obj_list))
+        stmt = insert(cls.model).values(obj_list)
         stmt = stmt.on_conflict_do_update(
             index_elements=['url'],
             set_={
@@ -49,3 +50,10 @@ class BasePostgresService(Generic[TableType]):
         )
         await db.execute(stmt)
         await db.commit()
+
+    @classmethod
+    async def get_all_article_ranked(cls, db: AsyncSession):
+        query = select(cls.model).order_by(cls.model.score.desc())
+        result = await db.execute(query)
+        await db.commit()
+        return result.fetchall()

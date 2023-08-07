@@ -6,7 +6,8 @@ Crawl news from vnexpress.net and tuoitre.vn and rank them by total likes in the
 
 ## Functionality
 
-- VnExpress crawler: Crawl articles and comments from their exposed API point and store them in database.
+- VnExpress crawler: Crawl articles from VnExpress.net, rank them by comment's likes and store results in database.
+- TuoiTre crawler: Crawl articles from TuoiTre.vn, rank them by comment's likes and store results in database.
 
 ## Quick Start
 
@@ -15,12 +16,19 @@ Crawl news from vnexpress.net and tuoitre.vn and rank them by total likes in the
 git clone git@github.com:pmphan/news-crawler.git
 ```
 
-2. Set up Postgres database. `docker-compose` file configures `postgres` and `pgadmin` by default. `docker-compose up -d` for quick set up.
-
-3. Configure `config/*.ini file` to fit purpose of run.
-    - Change `days_ago` in `service.ini` to determine how far back the crawl should run. 
-    - Change fields in `[postgres]` to connect to existing database.
-    - In `logging.ini`, use `handlers=file` to log to file and `handlers=root` to log to `stdout`.
+2. Set up Postgres database. 
+    - Create an `.env` file and populate it with an existing postgres instance:
+    ```bash
+    # These are default settings even if not set.
+    POSTGRES_DB=postgres
+    POSTGRES_USER=postgres
+    POSTGRES_PASSWORD=postgres
+    POSTGRES_HOST=localhost
+    POSTGRES_PORT=5432
+    # Or, overwritting all above
+    POSTGRES_URI=postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+    ```
+    - `docker-compose` file configures `postgres` and `pgadmin` by default. `docker-compose up -d` for quick set up.
 
 4. Set up virtual environment and install required packages.
 ```bash
@@ -29,11 +37,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-5. Run script:
+5. Run scrapy crawler (`days_ago=DATE` determines article's published time from which crawler will crawl):
 ```bash
-python main.py
+scrapy crawl [vnexpress|tuoitre] [-a days_ago=DATE] [--logfile FILE] [--loglevel LEVEL]
 ```
-Or only read result from database without crawling:
+
+4. Connect to Postgres instance to read result, or use script (Postgres credentials must be pre-supplied in `.env` or default will be used):
 ```bash
-python main.py --result
+python read_result.py [-h] [-t TABLENAME] [-o OUTPUT]
 ```

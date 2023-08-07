@@ -1,3 +1,6 @@
+# Environ
+.env
+
 # Python cache
 __pycache__
 
@@ -5,7 +8,7 @@ __pycache__
 venv
 
 # My output file
-output.txt
+*output.txt
 
 # My log file
-crawler.log
+*crawler.log

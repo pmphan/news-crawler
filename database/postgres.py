@@ -3,42 +3,30 @@ from logging import getLogger
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-logger = getLogger(__name__)
+logger = getLogger(f"scrapy.{__name__}")
 
 
 class Postgres:
 
-    def __init__(self, config: dict):
-        self.init_config(config)
-
-    def init_config(self, config: dict):
-        self.uri = "postgresql+asyncpg://{}:{}@{}:{}/{}".format(
-            config["user"],
-            config["password"],
-            config["host"],
-            config["port"],
-            config["database"]
-        )
+    def __init__(self, uri=None, user=None, password=None, database=None, host="localhost", port=5432):
+        if uri is not None:
+            self.uri = uri
+        else:
+            if None in (user, password, database, host, port):
+                raise ValueError("Can't construct URI from None value.")
+            self.uri = "postgresql+asyncpg://{}:{}@{}:{}/{}".format(
+                user,
+                password,
+                host,
+                port,
+                database
+            )
         self.engine = create_async_engine(self.uri)
         logger.info("Postgres URI: %s", self.uri)
 
-    async def __aenter__(self):
-        self.async_session = self.session()
-        return self.async_session
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.async_session.close()
-        self.async_session = None
-
-    def init_session(self):
-        """
-        Init Postgres async session
-        """
-        self.session = sessionmaker(self.engine, expire_on_commit=False, class_=AsyncSession)
-        return self.session
-
-    async def close_session(self):
-        await self.session.close()
+    async def close_db(self):
+        logger.debug("Postgres engine disposed.")
+        await self.engine.dispose()
 
     async def init_db(self, metadata):
         """
@@ -49,4 +37,4 @@ class Postgres:
         """
         async with self.engine.begin() as conn:
             await conn.run_sync(metadata.create_all)
-            logger.debug("[db] Created all tables: %s", metadata.tables.keys())
+            logger.debug("Created all tables: %s", metadata.tables.keys())

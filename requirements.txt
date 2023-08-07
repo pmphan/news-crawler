@@ -1,5 +1,6 @@
-beautifulsoup4~=4.12.2
+scrapy~=2.9.0
 asyncio~=3.4.3
 aiohttp~=3.8.5
 sqlalchemy~=2.0.19
 asyncpg~=0.28.0
+python-dotenv~=1.0.0
