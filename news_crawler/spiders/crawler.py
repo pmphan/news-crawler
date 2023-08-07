@@ -52,11 +52,11 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
         # Query for comment count and populate Article object with it.
         yield Request(
             self.comment_counter.make_comment_count_url(articles),
-            dont_filter=True,
             method="GET",
             callback=self.populate_comment_count,
             cb_kwargs={"articles": articles}
         )
+        return articles
 
     def populate_comment_count(self, response, articles: list):
         """
@@ -69,7 +69,6 @@ class BaseCrawler(CrawlSpider, metaclass=ABCMeta):
         for article in articles:
             article.comment_count = comment_count_dict[article.identifier]
             yield article
-        return article
 
     @abstractmethod
     def get_article_list(self, response):

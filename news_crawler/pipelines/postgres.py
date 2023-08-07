@@ -47,11 +47,15 @@ class PostgresPipeline:
     async def upsert_current_to_db(self):
         # Do upsert
         dict_list = []
+        identifier_set = set()
         for article in self.article_buffer:
             insert_obj = dict(ItemAdapter(article))
             # Ignore identifier from news site. Might change.
-            insert_obj.pop("identifier")
-            dict_list.append(insert_obj)
+            identifier = insert_obj.pop("identifier")
+            # Prevent duplicate update.
+            if not identifier in identifier_set:
+                identifier_set.add(identifier)
+                dict_list.append(insert_obj)
 
         async with self.postgres.engine.connect() as db_conn:
             await self.DBService.bulk_upsert(db_conn, dict_list)

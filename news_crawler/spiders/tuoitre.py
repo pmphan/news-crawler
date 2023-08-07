@@ -38,12 +38,13 @@ class TuoiTreSpider(BaseCrawler):
         yield Request(url=self.article_url)
         yield Request(url=self.video_url)
 
-    def populate_comment_count(self, response, articles: list):
+    def parse_start_url(self, response, **kwargs):
         """
-        Override super's populate comment count to also decide if go onto next page.
+        Override super's parse_start_url to also decide if go onto next page.
         Decide by comparing the last article's published time and compare it with our date range.
         """
-        last_article = yield from super().populate_comment_count(response, articles)
+        articles = yield from super().parse_start_url(response, **kwargs)
+        last_article = articles[-1]
         next_page_url = self.next_page_decider(last_article)
         if next_page_url:
             yield Request(url=next_page_url, callback=self.parse_start_url)
@@ -65,7 +66,7 @@ class TuoiTreSpider(BaseCrawler):
             published_time.strftime("%b %d %H:%M:%S"),
             self.from_datetime.strftime("%b %d %H:%M:%S")
         )
-        if published_time > self.to_datetime:
+        if published_time > self.from_datetime:
             if item_type == "video":
                 self.video_index += 1
                 url = self.video_url
