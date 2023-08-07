@@ -6,7 +6,8 @@ Crawl news from vnexpress.net and tuoitre.vn and rank them by total likes in the
 
 ## Functionality
 
-- VnExpress crawler: Crawl articles and comments from their exposed API point and store them in database.
+- VnExpress crawler: Crawl articles from VnExpress.net, rank them by comment's likes and store results in database.
+- TuoiTre crawler: Crawl articles from TuoiTre.vn, rank them by comment's likes and store results in database.
 
 ## Quick Start
 
@@ -16,7 +17,7 @@ git clone git@github.com:pmphan/news-crawler.git
 ```
 
 2. Set up Postgres database. 
-    - Create an .env file and populate it with an existing postgres instance:
+    - Create an `.env` file and populate it with an existing postgres instance:
     ```bash
     # These are default settings even if not set.
     POSTGRES_DB=postgres
