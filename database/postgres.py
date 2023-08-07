@@ -36,6 +36,5 @@ class Postgres:
             metadata: Create tables specified in here.
         """
         async with self.engine.begin() as conn:
-            #await conn.run_sync(metadata.drop_all)
             await conn.run_sync(metadata.create_all)
             logger.debug("Created all tables: %s", metadata.tables.keys())

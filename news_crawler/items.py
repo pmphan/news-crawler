@@ -35,3 +35,7 @@ class TuoiTreArticle(BaseArticle):
     published_time: datetime    # Published timestamp in UTC
     category: str = ""          # Category name
     item_type: Literal["article", "video"]
+
+    def __post_init__(self):
+        # Auto add domain for url
+        self.url = "https://tuoitre.vn" + self.url

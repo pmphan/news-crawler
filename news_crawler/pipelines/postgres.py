@@ -27,7 +27,7 @@ class PostgresPipeline:
         return postgres
 
     async def spider_opened(self, spider):
-        initdb = await self.postgres.init_db(Base.metadata)
+        await self.postgres.init_db(Base.metadata)
         self.DBService = crawler_db_mapping[spider.name]
         logger.info(
             "Postgres Pipeline use %s for DB service", self.DBService.__name__
