@@ -1,47 +1,10 @@
-"""Populate article item with scores."""
-import json
 import asyncio
 from logging import getLogger
-from aiohttp import ClientSession, DummyCookieJar
-from itemadapter import ItemAdapter
-
+from .comment_scorer import BaseScorer
 
 logger = getLogger(f"scrapy.{__name__}")
-
-class CommentPipeline:
-    """
-    Populate article item with scores. Drop item with comment count 0.
-    """
-    def __init__(self):
-        # API to get comment details
-        self.comment_api = "https://usi-saas.vnexpress.net"
-
-    def open_spider(self, spider):
-        self._session = ClientSession(base_url=self.comment_api, cookie_jar=DummyCookieJar())
-
-    def close_spider(self, spider):
-        close_session = self._session.close()
-        asyncio.create_task(close_session)
-
-    async def process_item(self, item, spider):
-        """
-        Process article. Drop item with comment count 0.
-        """
-        adapter = ItemAdapter(item)
-        if adapter["comment_count"] <= 0:
-            logger.debug(
-                "Article %s (%s) has 0 comment. Auto-skipped.",
-                adapter["full_identifier"], adapter["title"]
-            )
-            return item
-
-        score = await self.calculate_score(adapter)
-        adapter["score"] = score
-        logger.debug(
-            "Article %s set score to %d (%s)",
-            adapter["full_identifier"], adapter["score"], adapter["title"]
-        )
-        return item
+class VnExpressScorer(BaseScorer):
+    comment_api = "https://usi-saas.vnexpress.net"
 
     async def calculate_score(self, adapter):
         """
@@ -78,10 +41,7 @@ class CommentPipeline:
             "category_id": adapter["category_id"],
             "siteid": 1000000
         }
-        async with self._session.get("/index/get", params=params) as response:
-            logger.info("Comments GET <%d %s>", response.status, response.url)
-            response.raise_for_status()
-            return await response.text()
+        return await self.fetch_json("/index/get", params=params)
 
     async def get_comment_replys(self, adapter, comment_id, reply_count):
         """
@@ -96,17 +56,13 @@ class CommentPipeline:
             "id": comment_id,
             "siteid": 1000000,
         }
-        async with self._session.get("/index/getreplay", params=params) as response:
-            logger.info("Replys GET <%d %s>", response.status, response.url)
-            response.raise_for_status()
-            return await response.text()
+        return await self.fetch_json("/index/getreplay", params=params)
 
     def parse_api_response(self, response):
         """
         Parse API response into dict format and calculate sum of all user likes.
         """
-        dict_resp = json.loads(response)
-        items = dict_resp["data"]["items"]
+        items = response["data"]["items"]
         tentative_score = 0
         for item in items:
             # Early terminate because we already sorted by like count

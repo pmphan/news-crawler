@@ -26,13 +26,13 @@ class BasePostgresService(Generic[TableType]):
     async def get_one(cls, db: AsyncSession, _filter: dict):
         query = select(cls.model).filter_by(**_filter)
         result = await db.execute(query)
-        return result.scalars().first()
+        return result.first()
 
     @classmethod
     async def get_list(cls, db: AsyncSession, _filter: dict):
         query = select(cls.model).filter_by(**_filter)
         result = await db.execute(query)
-        return result.scalars().all()
+        return result.all()
 
     @classmethod
     async def bulk_upsert(cls, db: AsyncSession, obj_list: list[dict]):
@@ -50,3 +50,10 @@ class BasePostgresService(Generic[TableType]):
         )
         await db.execute(stmt)
         await db.commit()
+
+    @classmethod
+    async def get_all_article_ranked(cls, db: AsyncSession):
+        query = select(cls.model).order_by(cls.model.score.desc())
+        result = await db.execute(query)
+        await db.commit()
+        return result.fetchall()

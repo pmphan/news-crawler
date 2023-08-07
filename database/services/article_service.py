@@ -2,13 +2,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .postgres_service import BasePostgresService
-from database.schema.article import Articles
+from database.schema.article import VnExpress, TuoiTre
 
-class ArticleService(BasePostgresService[Articles]):
-    model = Articles
+class VnExpressDBService(BasePostgresService[VnExpress]):
+    model = VnExpress
 
-    @classmethod
-    async def get_all_article_ranked(cls, db: AsyncSession):
-        query = select(cls.model).order_by(cls.model.score.desc())
-        result = await db.execute(query)
-        return result.scalars().all()
+class TuoiTreDbService(BasePostgresService[TuoiTre]):
+    model = TuoiTre
+
+# Mapping spider name to DB service to use.
+crawler_db_mapping = {
+    "vnexpress": VnExpressDBService,
+    "tuoitre": TuoiTreDbService
+}

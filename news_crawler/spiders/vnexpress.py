@@ -1,19 +1,27 @@
 """
 VnExpress crawler.
 """
-from datetime import datetime, timedelta
-
 from scrapy import FormRequest
-from scrapy.spiders import CrawlSpider, Rule
+from scrapy.spiders import Rule
 from scrapy.linkextractors import LinkExtractor
 
-from vnexpress.items import Article
-from vnexpress.helper.comment_count import CommentCountParser
+from .crawler import BaseCrawler
+from news_crawler.items import VnExpressArticle
+from news_crawler.helper.comment_counter import VnExpressCounter
+from news_crawler.pipelines import VnExpressScorer, PostgresPipeline
 
 
-class VnExpressSpider(CrawlSpider):
+class VnExpressSpider(BaseCrawler):
     name = "vnexpress"
     allowed_domains = ["vnexpress.net"]
+    comment_counter = VnExpressCounter()
+
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            VnExpressScorer: 100,
+            PostgresPipeline: 200
+        }
+    }
 
     rules = (
         Rule(
@@ -24,30 +32,7 @@ class VnExpressSpider(CrawlSpider):
     )
 
     def __init__(self, *args, days_ago: int = 30, **kwargs):
-        """
-        Init VnExpressSpider.
-
-        Args:
-            days_ago: Scrapy should crawl articles from how long ago.
-        """
-        super().__init__(*args, **kwargs)
-
-        # Arguments passed in from command line will be parsed as string. Convert to int.
-        if not isinstance(days_ago, int):
-            self.logger.debug(
-                "[init] days_ago = %s is of %s. Converting...", days_ago, type(days_ago)
-            )
-            days_ago = int(days_ago)
-
-        to_date = datetime.now()
-        from_date = to_date - timedelta(days=days_ago)
-
-        self.from_timestamp = int(datetime.timestamp(from_date))
-        self.to_timestamp = int(datetime.timestamp(to_date))
-
-        self.comment_parser = CommentCountParser()
-
-        # API to get article by day
+        super().__init__(*args, days_ago=days_ago, **kwargs)
         self.by_day_api = "https://vnexpress.net/category/day"
 
     def start_requests(self):
@@ -80,19 +65,18 @@ class VnExpressSpider(CrawlSpider):
         for cat_id in categories:
             params = {
                 "cateid": str(cat_id),
-                "fromdate": str(self.from_timestamp),
-                "todate": str(self.to_timestamp)
+                "fromdate": f"{self.from_datetime.timestamp():0.0f}",
+                "todate": f"{self.to_datetime.timestamp():0.0f}"
             }
             yield FormRequest(self.by_day_api, method="GET", formdata=params)
 
-    def parse_start_url(self, response, **kwargs):
+    def get_article_list(self, response):
         """
-        Get article links from search result.
+        Get list of articles from response.
 
-        Args:
-            response: Scrapy response
+        Return:
+            list of Article objects.
         """
-        # Get all article on page.
         article_block_selector = "article.item-news-common"
         category_id_selector = "nav.main-nav li.active::attr(data-id)"
         category_id = response.css(category_id_selector).get()
@@ -104,31 +88,11 @@ class VnExpressSpider(CrawlSpider):
             title = article_block.css("h3 a::text").get()
             article_id = article_block.css("span.txt_num_comment::attr(data-objectid)").get()
             article_type = article_block.css("span.txt_num_comment::attr(data-objecttype)").get()
-            articles.append(Article(
+            articles.append(VnExpressArticle(
                 url=url,
                 title=title,
                 article_id=article_id,
                 article_type=article_type,
                 category_id=category_id
             ))
-            yield articles[-1]
-        # comment_count_query = self.comment_parser.make_comment_count_query(articles)
-        # yield FormRequest(
-        #     self.comment_parser.comment_count_api,
-        #     method="GET",
-        #     formdata={"cid": comment_count_query},
-        #     callback=self.parse_articles,
-        #     cb_kwargs={"articles": articles}
-        # )
-
-    def parse_articles(self, response, articles: list[Article]):
-        """
-        Add comment count data to article and yield.
-
-        Args:
-            articles: list of Article objects.
-        """
-        comment_count_dict = self.comment_parser.parse_comment_count_response(response)
-        for article in articles:
-            article.comment_count = comment_count_dict[article.full_identifier]
-            yield article
+        return articles

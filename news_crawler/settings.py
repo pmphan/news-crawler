@@ -6,11 +6,15 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+from os import environ
+from dotenv import load_dotenv
 
-BOT_NAME = "vnexpress"
+load_dotenv()
 
-SPIDER_MODULES = ["vnexpress.spiders"]
-NEWSPIDER_MODULE = "vnexpress.spiders"
+BOT_NAME = "news_crawler"
+
+SPIDER_MODULES = ["news_crawler.spiders"]
+NEWSPIDER_MODULE = "news_crawler.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -65,10 +69,10 @@ COOKIES_DEBUG = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-    "vnexpress.pipelines.comment.CommentPipeline": 100,
-    "vnexpress.pipelines.postgres.PostgresPipeline": 200
-}
+#ITEM_PIPELINES = {
+#    "news_crawler.pipelines.scorer.BaseScorer": 100,
+#    "news_crawler.pipelines.postgres.PostgresPipeline": 200
+#}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -95,3 +99,17 @@ ITEM_PIPELINES = {
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+# Postgres Database settings
+POSTGRES_PIPELINE_SETTINGS = {
+    "URI": environ.get(
+        "POSTGRES_URI", "postgresql+asyncpg://{}:{}@{}:{}/{}".format(
+            environ.get("POSTGRES_USER", "postgres"),
+            environ.get("POSTGRES_PASSWORD", "postgres"),
+            environ.get("POSTGRES_HOST", "localhost"),
+            environ.get("POSTGRES_PORT", 5432),
+            environ.get("POSTGRES_DB", "postgres")
+        )
+    ),
+    "BUFFER_SIZE": environ.get("BUFFER_SIZE", 100)
+}
