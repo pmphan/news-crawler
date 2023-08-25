@@ -51,10 +51,10 @@ async def get_ranked_result(postgres: Postgres, DBService, output=None):
 
 async def main():
     parser = ArgumentParser(prog="read_result", description="Read result from Postgres Database.")
-    parser.add_argument("-t", "--tablename", help="Select database to read from (vnexpress|tuoitre)")
+    parser.add_argument("SITENAME", help="Select database to read from (vnexpress|tuoitre)")
     parser.add_argument("-o", "--output", help="File to save result to. If not set default to stdout.", required=False, default=None)
     args = parser.parse_args()
-    DBService = crawler_db_mapping[args.tablename]
+    DBService = crawler_db_mapping[args.SITENAME]
     pg_conn = init_postgres()
     await get_ranked_result(pg_conn, DBService, args.output)
     await close_postgres(pg_conn)
